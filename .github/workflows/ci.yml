@@ -34,13 +34,15 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Validate DEV_TOKEN
-        shell: bash
+        shell: powershell
         env:
           DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
+          LOCAL_DEV_TOKEN: ${{ secrets.LOCAL_DEV_TOKEN }}
         run: |
-          if [ "$DEV_TOKEN" = "$LOCAL_DEV_TOKEN" ]; then
-            echo "DEV_TOKEN validado correctamente"
-          else
-            echo "DEV_TOKEN no coincide con LOCAL_DEV_TOKEN"
+          if ($env:DEV_TOKEN -eq $env:LOCAL_DEV_TOKEN) {
+            Write-Output "DEV_TOKEN validado correctamente"
+          }
+          else {
+            Write-Output "DEV_TOKEN no coincide con LOCAL_DEV_TOKEN"
             exit 1
-          fi
+          }
