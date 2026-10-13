@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update README
+        run: |
+          echo "Añadida feature: ${{ github.head_ref || github.ref_name }}" >> README.md
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "Update README with feature"
+          
+  validate-dev:
+    needs: update-readme
+    runs-on: self-hosted
+    steps:
+      - name: Validate DEV_TOKEN
+        shell: powershell
+        env:
+          DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
+          LOCAL_DEV_TOKEN: ${{ secrets.LOCAL_DEV_TOKEN }}
+        run: |
+         if ([string]::IsNullOrEmpty($env:DEV_TOKEN)) {
+            Write-Output "DEV_TOKEN está vacío"
+            exit 1
+          }
+          if ([string]::IsNullOrEmpty($env:LOCAL_DEV_TOKEN)) {
+            Write-Output "LOCAL_DEV_TOKEN está vacío"
+            exit 1
+          }
+          if ($env:DEV_TOKEN -ceq $env:LOCAL_DEV_TOKEN) {
+            Write-Output "Los tokens coinciden"
+          } else {
+            Write-Output "Los tokens son distintos"
+            exit 1
+          }

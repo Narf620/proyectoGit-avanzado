@@ -1,0 +1,50 @@
+name: CD
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update README version
+        run: |
+          sed -i 's/AppVersion-0/AppVersion-1/' README.md
+          echo "Fecha de actualización: $(date '+%Y-%m-%d %H:%M:%S')" >> README.md
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "Update application version"
+
+  validate-prod:
+    needs: update-version
+    runs-on: self-hosted
+    steps:
+      - name: Validate PROD_TOKEN
+        shell: powershell
+        env:
+          PROD_TOKEN: ${{ secrets.PROD_TOKEN }}
+          LOCAL_PROD_TOKEN: ${{ secrets.LOCAL_PROD_TOKEN }}
+        run: |
+          if ($env:PROD_TOKEN -ceq $env:LOCAL_PROD_TOKEN) {
+            Write-Output "PROD_TOKEN validado correctamente"
+          } else {
+            Write-Output "PROD_TOKEN no coincide con LOCAL_PROD_TOKEN"
+            exit 1
+          }
