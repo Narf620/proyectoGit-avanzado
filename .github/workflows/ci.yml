@@ -39,10 +39,17 @@ jobs:
           DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
           LOCAL_DEV_TOKEN: ${{ secrets.LOCAL_DEV_TOKEN }}
         run: |
-          if ($env:DEV_TOKEN -eq $env:LOCAL_DEV_TOKEN) {
-            Write-Output "DEV_TOKEN validado correctamente"
+         if ([string]::IsNullOrEmpty($env:DEV_TOKEN)) {
+            Write-Output "DEV_TOKEN está vacío"
+            exit 1
           }
-          else {
-            Write-Output "DEV_TOKEN no coincide con LOCAL_DEV_TOKEN"
+          if ([string]::IsNullOrEmpty($env:LOCAL_DEV_TOKEN)) {
+            Write-Output "LOCAL_DEV_TOKEN está vacío"
+            exit 1
+          }
+          if ($env:DEV_TOKEN -ceq $env:LOCAL_DEV_TOKEN) {
+            Write-Output "Los tokens coinciden"
+          } else {
+            Write-Output "Los tokens son distintos"
             exit 1
           }
